@@ -33,7 +33,7 @@ public:
     double dualArea() const;
     
     // calculates angle weighted vertex normal
-    void setNormal();
+    void computeNormal();
 };
 
 #endif

@@ -23,7 +23,7 @@ double Vertex::dualArea() const
     return area / 3.0;
 }
 
-void Vertex::setNormal() 
+void Vertex::computeNormal() 
 {
     Eigen::Vector3d n;
     normal.setZero();

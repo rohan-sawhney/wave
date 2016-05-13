@@ -14,9 +14,10 @@ int gridZ = 600;
 const double fovy = 50.;
 const double clipNear = .01;
 const double clipFar = 1000.;
-double x = 0;
-double y = 0;
-double z = -2.5;
+double x = 0.0, y = 0.0, z = 0.0;
+double eyeX = 0.0, eyeY = 0.0, eyeZ = 2.5; // camera points initially along y-axis
+double upX = 0.0, upY = 1.0, upZ = 0.0; // camera points initially along y-axis
+double r = 2.5, theta = 0.0, phi = 0.0;
 
 std::string path = "/Users/rohansawhney/Desktop/developer/C++/wave-mesh/kitten.obj";
 
@@ -32,12 +33,10 @@ double max = 1.0;
 void initColors()
 {
     for (VertexIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
-        v->setNormal();
+        v->computeNormal();
         v->prevColor = min;
         v->currColor = min;
     }
-    
-    mesh.vertices[rand() % mesh.vertices.size()].currColor = max;
 }
 
 void setTitle()
@@ -47,16 +46,6 @@ void setTitle()
           << "  a = " << std::setprecision(3) << a
           << "  b = " << std::setprecision(4) << b;
     glutSetWindowTitle(title.str().c_str());
-}
-
-void animate(int value)
-{
-    if (!stop) {
-        mesh.computeWaveFlow(min, max);
-        glutPostRedisplay();
-    }
-    
-    glutTimerFunc(0, animate, 0);
 }
 
 void printInstructions()
@@ -117,7 +106,7 @@ void display()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     
-    gluLookAt(0, 0, z, x, y, 0, 0, 1, 0);
+    gluLookAt(eyeX, eyeY, eyeZ, x, y, z, upX, upY, upZ);
     
     if (success) {
         draw();
@@ -173,7 +162,6 @@ void keyboard(unsigned char key, int x0, int y0)
     }
     
     setTitle();
-    glutPostRedisplay();
 }
 
 void special(int i, int x0, int y0)
@@ -195,7 +183,42 @@ void special(int i, int x0, int y0)
     }
     
     setTitle();
-    glutPostRedisplay();
+}
+
+void mouse(int x, int y)
+{
+    // mouse point to angle conversion
+    theta = (360.0 / gridY)*y*3.0;    // 3.0 rotations possible
+   	phi = (360.0 / gridX)*x*3.0;
+    
+    // restrict the angles within 0~360 deg (optional)
+   	if (theta > 360) theta = fmod((double)theta, 360.0);
+   	if (phi > 360) phi = fmod((double)phi, 360.0);
+    
+    // spherical to cartesian conversion.
+    // degrees to radians conversion factor 0.0174532
+    eyeX = r * sin(theta*0.0174532) * sin(phi*0.0174532);
+    eyeY = r * cos(theta*0.0174532);
+   	eyeZ = r * sin(theta*0.0174532) * cos(phi*0.0174532);
+    
+    // reduce theta slightly to obtain another point on the same longitude line on the sphere.
+    GLfloat dt = 1.0;
+   	GLfloat eyeXtemp = r * sin(theta*0.0174532-dt) * sin(phi*0.0174532);
+   	GLfloat eyeYtemp = r * cos(theta*0.0174532-dt);
+   	GLfloat eyeZtemp = r * sin(theta*0.0174532-dt) * cos(phi*0.0174532);
+    
+    // connect these two points to obtain the camera's up vector.
+   	upX = eyeXtemp - eyeX;
+   	upY = eyeYtemp - eyeY;
+   	upZ = eyeZtemp - eyeZ;
+}
+
+void idle()
+{
+    if (!stop) {
+        mesh.computeWaveFlow(min, max);
+        glutPostRedisplay();
+    }
 }
 
 int main(int argc, char** argv) {
@@ -212,10 +235,12 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutCreateWindow("Wave, h = 0.001  a = 4  b = 0.01");
     init();
+    
     glutDisplayFunc(display);
     glutKeyboardFunc(keyboard);
     glutSpecialFunc(special);
-    glutTimerFunc(0, animate, 0);
+    glutIdleFunc(idle);
+    glutMotionFunc(mouse);
     glutMainLoop();
     
     return 0;
