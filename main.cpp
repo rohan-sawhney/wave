@@ -25,8 +25,8 @@ Mesh mesh;
 bool success = true;
 bool stop = false;
 double h = 0.001;
-double a = 4;
-double b = 0.01;
+double a = 10;
+double b = 0.005;
 double min = 0.25;
 double max = 1.0;
 
@@ -82,7 +82,7 @@ void draw()
         
         double color = (v1->currColor + v2->currColor) * 0.5;
         if (color < min) color = min;
-        glColor4f(0.0, 0.0, color, 0.5);
+        glColor4f(0.0, 0.0, color, 1.0);
         
         glVertex3d(a.x(), a.y(), a.z());
         glVertex3d(b.x(), b.y(), b.z());
